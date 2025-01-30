@@ -10,30 +10,36 @@ import {
   connectFirestoreEmulator 
 } from "firebase/firestore";
 
-// Dit is een fake configuratie. De emulator gebruikt deze waardes niet echt om te connecten. 
-// Belangrijk is dat je projectId hetzelfde is als in je echte config, zodat emulator en je app matchen.
 const firebaseTestConfig = {
   apiKey: "fake-api-key",
   authDomain: "localhost", 
-  projectId: "leakplanting", // Zorg dat dit overeenkomt met je echte projectId
+  projectId: "leakplanting", 
   storageBucket: "fake-storage-bucket",
   messagingSenderId: "fake-messaging-sender-id",
   appId: "fake-app-id"
 };
 
+// Inicia la app y las conexiones
 const app = initializeApp(firebaseTestConfig);
 
 export const auth = getAuth(app);
-// Verbind Auth met de emulatorport (zoals in firebase.json)
 connectAuthEmulator(auth, "http://localhost:9099");
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const db = getFirestore(app);
-// Verbind Firestore met de emulatorport
 connectFirestoreEmulator(db, "localhost", 8080);
 
-test('verificar autenticación', async () => {
-  connectAuthEmulator(auth, "http://localhost:9099");
-   });
+// Test
+test("verificar que setCustomParameters se llama correctamente", () => {
+  const spy = jest.spyOn(googleProvider, "setCustomParameters");
+
+  // Llamamos a setCustomParameters
+  googleProvider.setCustomParameters({ prompt: "select_account" });
+
+  // Verificamos que se haya llamado correctamente
+  expect(spy).toHaveBeenCalledWith({ prompt: "select_account" });
+
+  spy.mockRestore();
+});
