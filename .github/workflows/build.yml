@@ -1,0 +1,52 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      # Set up Node.js (si es un proyecto de Node.js)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Usa la versión que necesites
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Run tests and generate coverage report
+      - name: Run tests and generate coverage
+        run: npm run test -- --coverage --coverageReporters=lcov
+
+      # Prepare the coverage report for SonarQube
+      - name: Prepare SonarQube coverage report
+        run: |
+          # Asumiendo que el reporte se genera en 'coverage/lcov-report/index.html'
+          # Si tu herramienta de cobertura genera otro archivo, asegúrate de que SonarQube lo reconozca
+          mv coverage/lcov-report/lcov-report.html ./sonar-report.html
+
+      # SonarQube Scan
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          extraArgs: |
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.coverageReportPaths=coverage/lcov-report/lcov-report.xml # Especifica la ruta del informe LCOV
+
